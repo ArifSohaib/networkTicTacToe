@@ -9,7 +9,7 @@
 
 char * printMenu(){
     char *menu;
-    menu = "Enter option:\n\tLogin[1]/Logout[1]\tList players[2]\n\tJoin game[3]\n\tAccept request[4]\n\tExit[5]\n\0";
+    menu = "Enter option:\n\tLogin[1]/Logout[1]\n\tList players[2]\n\tJoin game[3]\n\tAccept request[4]\n\tExit[5]\n\0";
     return menu;
 }
 
@@ -85,6 +85,9 @@ int main(int argc, char *argv[])
 
         printf("Handling client %s\n", inet_ntoa(echoClntAddr.sin_addr));
         request = atoi(echoBuffer);
+        if(request == 5){
+            goto quit;
+        }
         handleRequest(request);
         /* Send received datagram back to the client */
         check((sendto(sock, printMenu(), strlen(printMenu()), 0,
@@ -93,4 +96,6 @@ int main(int argc, char *argv[])
     }
     error:
     return 1;
+    quit:
+    return 0;
 }

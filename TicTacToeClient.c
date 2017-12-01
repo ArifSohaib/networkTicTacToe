@@ -49,28 +49,36 @@ int main(int argc, char *argv[])
     echoServAddr.sin_family = AF_INET;                 /* Internet addr family */
     echoServAddr.sin_addr.s_addr = inet_addr(servIP);  /* Server IP address */
     echoServAddr.sin_port   = htons(echoServPort);     /* Server port */
-    
-    /* Send the string to the server */
-    check ((sendto(sock, echoString, echoStringLen, 0, (struct sockaddr *)
-               &echoServAddr, sizeof(echoServAddr)) == echoStringLen)
-        ,"sendto() sent a different number of bytes than expected");
-    
+
+    check((sendto(sock, echoString, echoStringLen, 0, (struct sockaddr *)&echoServAddr, sizeof(echoServAddr)) == echoStringLen), "sendto() sent a different number of bytes than expected");
     /* Recv a response */
     fromSize = sizeof(fromAddr);
     respStringLen = recvfrom(sock, echoBuffer, ECHOMAX, 0,
-         (struct sockaddr *) &fromAddr, &fromSize);
-    // check (((respStringLen = recvfrom(sock, echoBuffer, ECHOMAX, 0,
-    //      (struct sockaddr *) &fromAddr, &fromSize)) == echoStringLen)
-    //     ,"recvfrom() failed");
+                             (struct sockaddr *)&fromAddr, &fromSize);
 
-    check ((echoServAddr.sin_addr.s_addr == fromAddr.sin_addr.s_addr) ,"Error: received a packet from unknown source.\n");
+    check((echoServAddr.sin_addr.s_addr == fromAddr.sin_addr.s_addr), "Error: received a packet from unknown source.\n");
+    printf("Received:\n%s\n", echoBuffer);
+
+    /* Send the string to the server */
+    for(;;){
+        scanf("%s", echoString);
+        check ((sendto(sock, echoString, echoStringLen, 0, (struct sockaddr *)
+               &echoServAddr, sizeof(echoServAddr)) == echoStringLen)
+        ,"sendto() sent a different number of bytes than expected");
+        /* Recv a response */
+        fromSize = sizeof(fromAddr);
+        respStringLen = recvfrom(sock, echoBuffer, ECHOMAX, 0,
+            (struct sockaddr *) &fromAddr, &fromSize);
+
+        check ((echoServAddr.sin_addr.s_addr == fromAddr.sin_addr.s_addr) ,"Error: received a packet from unknown source.\n");
     
     
-    /* null-terminate the received data */
-    echoBuffer[respStringLen] = '\0';
-    printf("Received:\n%s\n", echoBuffer);    /* Print the echoed arg */
-    
+        /* null-terminate the received data */
+        echoBuffer[respStringLen] = '\0';
+        printf("Received:\n%s\n", echoBuffer);    
+
+    }
+error:
     close(sock);
-    error:
     exit(0);
 }
