@@ -3,42 +3,78 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "dbg.h"
 
 #define ECHOMAX 255
+//list of loggedIn users
+char *loggedInUsers[200];
+int loggedInCount = 0;
 
 char * printMenu(){
     char *menu;
-    menu = "Enter option:\n\tLogin[1]/Logout[1]\n\tList players[2]\n\tJoin game[3]\n\tAccept request[4]\n\tExit[5]\n\0";
+    menu = "Enter option:\n\tLogin[1]/Logout[1]\n\tList players[2]\n\tSend request[3]\n\tAccept request[4]\n\tExit[5]\n\0";
     return menu;
 }
 
-void handleRequest(int request){
+void requestData(char *msg, int sock, struct sockaddr_in clntAddress, unsigned int cliAddrLen, char *result)
+{
+    int recvMsgSize;
+    check(sendto(sock, msg, strlen(msg), 0,
+           (struct sockaddr *)&clntAddress, sizeof(clntAddress))==strlen(msg), "sent different number of bytes than expected");
+    printf("sent menu to client\n");
+    
+    check(((recvMsgSize = recvfrom(sock, result, ECHOMAX, 0,
+                                                    (struct sockaddr *)&clntAddress, &cliAddrLen)) >= 0),
+                           "recvfrom() failed size= %i", recvMsgSize);
+    printf("\nrecieved %s of length %lu\n", result, strlen(result));
     error:
+        return;
+}
+
+void handleRequest(int request, int sock, struct sockaddr_in clntAddress, unsigned int cliAddrLen)
+{
+
     printMenu();
-    // scanf("%i", &request);
     printf("requested %i\n", request);
     check(((request > 0) && (request < 6)), "enter value between 1 and 5");
     switch (request)
     {
     case 1:
-        printf("logging in\n");
+        printf("logging in user");
         //send login request
-
+        int recvMsgSize;
+        char data[ECHOMAX];
+        requestData("enter username", sock, clntAddress, cliAddrLen, data);
+        
+        strcpy(loggedInUsers[loggedInCount],data);
+        printf("added user %s", data);
+        loggedInCount += 1;
+        check(strcmp(loggedInUsers[loggedInCount], data) == 0, "copy did not work");
+        printf("%i users logged in\n", loggedInCount);
         break;
     case 2:
         printf("listing players\n");
+        int i;
+        for(i = 0; i < loggedInCount; i++){
+            printf("%i: %s\n", i, loggedInUsers[i]);
+        }
         break;
     case 3:
-        printf("joining game\n");
+        printf("sending request\n");
+
         break;
     case 4:
         printf("accepting request\n");
+        fork();
+        execl("./TicTacToe", "", (char *)NULL);
         break;
     case 5:
         printf("quitting\n");
         return;
     }
+    error:
+        return;
 }
 
 int main(int argc, char *argv[])
@@ -51,6 +87,7 @@ int main(int argc, char *argv[])
     unsigned short echoServPort;     /* Server port */
     int recvMsgSize;                 /* Size of received message */
     int request;
+    char* data;
 
     if (argc != 2) /* Test for correct number of parameters */
     {
@@ -84,11 +121,18 @@ int main(int argc, char *argv[])
             "recvfrom() failed");
 
         printf("Handling client %s\n", inet_ntoa(echoClntAddr.sin_addr));
+        //first part of echo buffer is the request
         request = atoi(echoBuffer);
-        if(request == 5){
-            goto quit;
-        }
-        handleRequest(request);
+        // if(request == 5){
+        //     goto quit;
+        // }
+        // //rest of it is data
+        // data = malloc(strlen(echoBuffer)*sizeof(char));
+        // memcpy(data, &echoBuffer[1]+'\0', strlen(echoBuffer)+1);
+        // printf("data len %lu\n", strlen(data));
+        // printf("request %s\n", echoBuffer);
+        // printf("data for request %s\n", data);
+        handleRequest(request, sock, echoClntAddr, cliAddrLen);
         /* Send received datagram back to the client */
         check((sendto(sock, printMenu(), strlen(printMenu()), 0,
                    (struct sockaddr *)&echoClntAddr, sizeof(echoClntAddr)) == strlen(printMenu())),
