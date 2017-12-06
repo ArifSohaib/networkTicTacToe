@@ -6,9 +6,10 @@
 #include <unistd.h>
 #include "dbg.h"
 
-#define ECHOMAX 255
+#define MAX 255
+#define MAX_USERS 20
 //list of loggedIn users
-char *loggedInUsers[200];
+char loggedInUsers[MAX_USERS][MAX];
 int loggedInCount = 0;
 
 char * printMenu(){
@@ -22,12 +23,12 @@ void requestData(char *msg, int sock, struct sockaddr_in clntAddress, unsigned i
     int recvMsgSize;
     check(sendto(sock, msg, strlen(msg), 0,
            (struct sockaddr *)&clntAddress, sizeof(clntAddress))==strlen(msg), "sent different number of bytes than expected");
-    printf("sent menu to client\n");
+    printf("\nsent menu to client\n");
     
-    check(((recvMsgSize = recvfrom(sock, result, ECHOMAX, 0,
+    check(((recvMsgSize = recvfrom(sock, result, MAX, 0,
                                                     (struct sockaddr *)&clntAddress, &cliAddrLen)) >= 0),
                            "recvfrom() failed size= %i", recvMsgSize);
-    printf("\nrecieved %s of length %lu\n", result, strlen(result));
+    
     error:
         return;
 }
@@ -44,13 +45,13 @@ void handleRequest(int request, int sock, struct sockaddr_in clntAddress, unsign
         printf("logging in user");
         //send login request
         int recvMsgSize;
-        char data[ECHOMAX];
+        char data[MAX];
         requestData("enter username", sock, clntAddress, cliAddrLen, data);
-        
-        strcpy(loggedInUsers[loggedInCount],data);
+        printf("\nrecieved %s of length %lu\n", data, strlen(data));
+        memcpy(&loggedInUsers[loggedInCount], data, strlen(data));
         printf("added user %s", data);
-        loggedInCount += 1;
         check(strcmp(loggedInUsers[loggedInCount], data) == 0, "copy did not work");
+        loggedInCount += 1;
         printf("%i users logged in\n", loggedInCount);
         break;
     case 2:
@@ -83,11 +84,17 @@ int main(int argc, char *argv[])
     struct sockaddr_in echoServAddr; /* Local address */
     struct sockaddr_in echoClntAddr; /* Client address */
     unsigned int cliAddrLen;         /* Length of incoming message */
-    char echoBuffer[ECHOMAX];        /* Buffer for echo string */
+    char echoBuffer[MAX];        /* Buffer for echo string */
     unsigned short echoServPort;     /* Server port */
     int recvMsgSize;                 /* Size of received message */
     int request;
     char* data;
+
+    // int i;
+    // //allocate space for storing logged in users
+    // for(i = 0; i < 200; i++){
+    //     loggedInUsers[i] = malloc(char;
+    // }
 
     if (argc != 2) /* Test for correct number of parameters */
     {
@@ -116,7 +123,7 @@ int main(int argc, char *argv[])
         cliAddrLen = sizeof(echoClntAddr);
 
         /* Block until receive message from a client */
-        check (((recvMsgSize = recvfrom(sock, echoBuffer, ECHOMAX, 0,
+        check (((recvMsgSize = recvfrom(sock, echoBuffer, MAX, 0,
                                     (struct sockaddr *)&echoClntAddr, &cliAddrLen)) >= 0),
             "recvfrom() failed");
 
