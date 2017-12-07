@@ -18,45 +18,27 @@ char* printMenu(){
     return menu;
 }
 
-//use when doing a request/reply 
+//use when doing a request/reply
 void requestData(char *msg, int sock, struct sockaddr_in clntAddress, unsigned int cliAddrLen, char *result)
 {
     int recvMsgSize;
     check(sendto(sock, msg, strlen(msg), 0,
-           (struct sockaddr *)&clntAddress, sizeof(clntAddress))==strlen(msg), "sent different number of bytes than expected");
-    printf("\nsent menu to client\n");
-    
+                 (struct sockaddr *)&clntAddress, sizeof(clntAddress)) == strlen(msg),
+          "sent different number of bytes than expected");
+    printf("\nsent request to client\n");
+
     check(((recvMsgSize = recvfrom(sock, result, MAX, 0,
-                                                    (struct sockaddr *)&clntAddress, &cliAddrLen)) >= 0),
-                           "recvfrom() failed size= %i", recvMsgSize);
-    
-    error:
-        return;
+                                   (struct sockaddr *)&clntAddress, &cliAddrLen)) >= 0),
+          "recvfrom() failed size= %i", recvMsgSize);
+    //null terminate response
+    result[recvMsgSize] = '\0';
+error:
+    return;
 }
-
-// void requestData(char *msg, char* reply, int sock, struct sockaddr_in clntAddress, unsigned int cliAddrLen, char *result)
-// {
-//     int recvMsgSize;
-//     check(sendto(sock, msg, strlen(msg), 0,
-//                  (struct sockaddr *)&clntAddress, sizeof(clntAddress)) == strlen(msg),
-//           "sent different number of bytes than expected");
-//     printf("\nsent menu to client\n");
-
-//     check(((recvMsgSize = recvfrom(sock, result, MAX, 0,
-//                                    (struct sockaddr *)&clntAddress, &cliAddrLen)) >= 0),
-//           "recvfrom() failed size= %i", recvMsgSize);
-//     check(sendto(sock, reply, strlen(msg), 0,
-//                  (struct sockaddr *)&clntAddress, sizeof(clntAddress)) == strlen(msg),
-//           "sent different number of bytes than expected");
-
-// error:
-//     return;
-// }
 
 //use when just sending 
 void sendData(char *msg, int sock, struct sockaddr_in clntAddress)
 {
-    int recvMsgSize;
     check(sendto(sock, msg, strlen(msg), 0,
                  (struct sockaddr *)&clntAddress, sizeof(clntAddress)) == strlen(msg),
           "sent different number of bytes than expected");
@@ -76,7 +58,7 @@ void handleRequest(int request, int sock, struct sockaddr_in clntAddress, unsign
         printf("logging in user");
         //send login request
         int recvMsgSize;
-        requestData("enter username\n\0", sock, clntAddress, cliAddrLen, data);
+        requestData("enter username\0", sock, clntAddress, cliAddrLen, data);
         printf("\nrecieved %s of length %lu\n", data, strlen(data));
         memcpy(&loggedInUsers[loggedInCount], data, strlen(data));
         printf("added user %s", data);
@@ -166,7 +148,7 @@ int main(int argc, char *argv[])
         check (((recvMsgSize = recvfrom(sock, echoBuffer, MAX, 0,
                                     (struct sockaddr *)&echoClntAddr, &cliAddrLen)) >= 0),
             "recvfrom() failed");
-
+        echoBuffer[recvMsgSize] = '\0';
         printf("Handling client %s\n", inet_ntoa(echoClntAddr.sin_addr));
         //get request number
         request = atoi(echoBuffer);
