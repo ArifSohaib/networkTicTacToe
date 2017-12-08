@@ -12,6 +12,18 @@
 char loggedInUsers[MAX_USERS][MAX];
 int loggedInCount = 0;
 
+void clearMem(char *memory)
+{
+    if ((memory != NULL) && (memory[0] == '\0'))
+    {
+        printf("c is empty\n");
+    }
+    else
+    {
+        memset(memory, 0, strlen(memory));
+    }
+}
+
 char* printMenu(){
     char *menu;
     menu = "Enter option:\n\tLogin[1]/Logout[1]\n\tList players[2]\n\tSend request[3]\n\tAccept request[4]\n\tExit[5]\n\0";
@@ -80,20 +92,25 @@ void handleRequest(int request, int sock, struct sockaddr_in clntAddress, unsign
         printf("listing players\n");
         int i;
         char sendList[1000];
-        memset(sendList, 0, strlen(sendList));
+        char temp[100];
+        
+        clearMem(sendList);
         strcat(sendList ,"Logged in users:\n");
         for(i = 0; i < loggedInCount; i++){
-            strcat(sendList, (", %s,",i, loggedInUsers[i]));
+            clearMem(temp);
+            strcat(temp, loggedInUsers[i]);
+            strcat(temp, ", ");
+            strcat(sendList, temp);
             printf("\t%i: %s\n", i, loggedInUsers[i]);
         }
         strcat(sendList, "\n");
         sendData(sendList, sock,clntAddress);
         //clear out the list
-        memset(sendList, 0, strlen(sendList));
+        clearMem(sendList);
         break;
     case 3:
         printf("sending request\n");
-        memset(data, 0, strlen(data));
+        clearMem(data);
         requestData("username to request?\n\0", sock, clntAddress, cliAddrLen, data);
         printf("requesting %s for game\n", data);
         sendData("requesting\n\0",sock, clntAddress);

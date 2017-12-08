@@ -29,6 +29,16 @@ error:
     return;
 }
 
+void clearMem(char *memory){
+    if ((memory != NULL) && (memory[0] == '\0'))
+    {
+        printf("c is empty\n");
+    }
+    else{
+        memset(memory, 0, strlen(memory));
+    }
+}
+
 int main(int argc, char *argv[])
 {
     int sock;                        /* Socket descriptor */
@@ -83,13 +93,15 @@ int main(int argc, char *argv[])
     {
         //print the server's request
         printf("%s\n", buffer);
+        //zero out the data
+        memset(data, 0, strlen(data));
         //get the username from client
         scanf("%s", data);
         dataLen = strlen(data);
         printf("sending %s\n", data);
         //send the username
         check((sendto(sock, data, dataLen, 0, (struct sockaddr *)&echoServAddr, sizeof(echoServAddr)) == dataLen), "sendto() sent a different number of bytes than expected");
-        memset(data, 0, dataLen);
+        clearMem(data);
         //get the login confirmation from server
         respStringLen = recvfrom(sock, buffer, MAX, 0, (struct sockaddr *)&fromAddr, &fromSize);
         check((echoServAddr.sin_addr.s_addr == fromAddr.sin_addr.s_addr), "Error: received a packet from unknown source.\n");
@@ -98,7 +110,7 @@ int main(int argc, char *argv[])
         //display 
         printf("%s\n", buffer);
         //clear out the buffer
-        memset(buffer, 0, respStringLen);
+        clearMem(buffer);
     }
     //after login, request/response cycle starts
     while (1)
@@ -122,7 +134,7 @@ int main(int argc, char *argv[])
         check((sendto(sock, echoString, echoStringLen, 0, (struct sockaddr *)&echoServAddr, sizeof(echoServAddr)) == echoStringLen), "sendto() sent a different number of bytes than expected");
         /* Recv a response to the request*/
         fromSize = sizeof(fromAddr);
-        memset(buffer, 0, respStringLen);
+        clearMem(buffer);
         respStringLen = recvfrom(sock, buffer, MAX, 0, (struct sockaddr *)&fromAddr, &fromSize);
         check((echoServAddr.sin_addr.s_addr == fromAddr.sin_addr.s_addr), "Error: received a packet from unknown source.\n");
         /* null-terminate the received data */
@@ -132,7 +144,7 @@ int main(int argc, char *argv[])
         if (strncmp(buffer, "enter username", 16) == 0)
         {
             //get the username from client
-            memset(data, 0, strlen(data));
+            clearMem(data);
             scanf("%s", data);
             printf("sending '%s' to server\n", data);
             dataLen = strlen(data);
@@ -146,7 +158,7 @@ int main(int argc, char *argv[])
             //display
             printf("server response to second input:\n %s\n", buffer);
             //clear out the buffer
-            memset(buffer, 0, respStringLen);
+            clearMem(buffer);
         }
         else if (strncmp(buffer, "quit", 4) == 0)
         {
@@ -164,7 +176,9 @@ int main(int argc, char *argv[])
         else if (strncmp(buffer, "username to request?", strlen("username to request?")) == 0)
         {
             //print the server's request
-            printf("DEBUG: in 'requesting'\n");
+            // printf("DEBUG: in 'requesting'\n");
+            //clear out the data buffer
+            memset(data,0, strlen(data));
             //get the username from client
             scanf("%s", data);
             dataLen = strlen(data);
@@ -179,12 +193,12 @@ int main(int argc, char *argv[])
             //display
             printf("%s", buffer);
             //clear out the buffer
-            memset(buffer, 0, respStringLen);
+            clearMem(buffer);
         }
         else if (strncmp(buffer, "start game", 10) == 0)
         {
             printf("starting game\n");
-            execl("./TicTacToe",(char*)NULL, (char *)NULL);
+            execl("./TicTacToe", "./TicTacToe", NULL);
         }
         else
         {
