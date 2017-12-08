@@ -2,7 +2,8 @@
 assignment for computer networks class, TicTacToe over C network
 
 # COSC 522 Project 4 Documentation and Instructions
-## Muhammad Sohaib Arif    E01536826 
+## Muhammad Sohaib Arif   
+## EMUID: E01536826 
 Compiled and tested on on Ubuntu 16.04 using gcc
 ### Compile Instructions:
 compile game using gcc my_tic_tac_toe.c -o TicTacToe
@@ -18,4 +19,5 @@ compile client using gcc TicTacToeClient.c -o TicTacToeClient
 ### Bugs:
 Sometimes segfaults randomly. Restarting the client or the client and server usually fixes it.
 I was unable to find why this was happening
-
+### Note for anyone outside of class reading on Github:
+This was among my first times using C after 4 years
