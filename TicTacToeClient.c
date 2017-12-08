@@ -86,20 +86,21 @@ int main(int argc, char *argv[])
         //get the username from client
         scanf("%s", data);
         dataLen = strlen(data);
-        printf("sending %s", data);
+        printf("sending %s\n", data);
         //send the username
         check((sendto(sock, data, dataLen, 0, (struct sockaddr *)&echoServAddr, sizeof(echoServAddr)) == dataLen), "sendto() sent a different number of bytes than expected");
+        memset(data, 0, dataLen);
         //get the login confirmation from server
         respStringLen = recvfrom(sock, buffer, MAX, 0, (struct sockaddr *)&fromAddr, &fromSize);
         check((echoServAddr.sin_addr.s_addr == fromAddr.sin_addr.s_addr), "Error: received a packet from unknown source.\n");
         /* null-terminate the received data */
         buffer[respStringLen] = '\0';
-        //display
-        printf("%s", buffer);
+        //display 
+        printf("%s\n", buffer);
         //clear out the buffer
         memset(buffer, 0, respStringLen);
     }
-
+    //after login, request/response cycle starts
     while (1)
     {
         /* Recv a response menu */
@@ -107,29 +108,34 @@ int main(int argc, char *argv[])
         respStringLen = recvfrom(sock, buffer, MAX, 0, (struct sockaddr *)&fromAddr, &fromSize);
 
         check((echoServAddr.sin_addr.s_addr == fromAddr.sin_addr.s_addr), "Error: received a packet from unknown source.\n");
+        
+        /* null-terminate the received data */
+        buffer[respStringLen] = '\0';
+        //this should print the menu only
         printf("Received:\n%s\n", buffer);
 
         //get request number from user
         scanf("%s", echoString);
+        check((atoi(echoString) > 0 && atoi(echoString) < 6), "please enter a value between 1 and 5\n");
         echoStringLen = strlen(echoString);
         //send request number to server
         check((sendto(sock, echoString, echoStringLen, 0, (struct sockaddr *)&echoServAddr, sizeof(echoServAddr)) == echoStringLen), "sendto() sent a different number of bytes than expected");
         /* Recv a response to the request*/
         fromSize = sizeof(fromAddr);
+        memset(buffer, 0, respStringLen);
         respStringLen = recvfrom(sock, buffer, MAX, 0, (struct sockaddr *)&fromAddr, &fromSize);
         check((echoServAddr.sin_addr.s_addr == fromAddr.sin_addr.s_addr), "Error: received a packet from unknown source.\n");
         /* null-terminate the received data */
         buffer[respStringLen] = '\0';
-        printf("Received:\n%s\n", buffer);
+        printf("Server says:\n\t%s:\n", buffer);
         //act on response, note that some cases require sending more data to server
         if (strncmp(buffer, "enter username", 16) == 0)
         {
-            //print the server's request
-            printf("%s", buffer);
             //get the username from client
+            memset(data, 0, strlen(data));
             scanf("%s", data);
+            printf("sending '%s' to server\n", data);
             dataLen = strlen(data);
-            printf("sending %s", data);
             //send the username
             check((sendto(sock, data, dataLen, 0, (struct sockaddr *)&echoServAddr, sizeof(echoServAddr)) == dataLen), "sendto() sent a different number of bytes than expected");
             //get the login confirmation from server
@@ -138,7 +144,7 @@ int main(int argc, char *argv[])
             /* null-terminate the received data */
             buffer[respStringLen] = '\0';
             //display
-            printf("%s\n", buffer);
+            printf("server response to second input:\n %s\n", buffer);
             //clear out the buffer
             memset(buffer, 0, respStringLen);
         }
@@ -149,33 +155,36 @@ int main(int argc, char *argv[])
             close(sock);
             exit(0);
         }
-        else if (strncmp(buffer, "\nLogged in users", 16) == 0)
+        else if (strncmp(buffer, "Logged in users", strlen("Logged in users")) == 0)
         {
             //in this case, no furter action is required by the user
-            printf("%s", buffer);
+            printf("server sent usernames\n");
+
         }
-        else if (strncmp(buffer, "requesting", 10) == 0)
+        else if (strncmp(buffer, "username to request?", strlen("username to request?")) == 0)
         {
-            //print the server's data request
-            printf("%s", buffer);
-            //get data to respond to request
+            //print the server's request
+            printf("DEBUG: in 'requesting'\n");
+            //get the username from client
             scanf("%s", data);
             dataLen = strlen(data);
-            //send the data
+            printf("sending %s to server\n", data);
+            //send the username
             check((sendto(sock, data, dataLen, 0, (struct sockaddr *)&echoServAddr, sizeof(echoServAddr)) == dataLen), "sendto() sent a different number of bytes than expected");
-            //get response from server
+            //get the confirmation from server
             respStringLen = recvfrom(sock, buffer, MAX, 0, (struct sockaddr *)&fromAddr, &fromSize);
             check((echoServAddr.sin_addr.s_addr == fromAddr.sin_addr.s_addr), "Error: received a packet from unknown source.\n");
             /* null-terminate the received data */
             buffer[respStringLen] = '\0';
             //display
-            printf("%s\n", buffer);
+            printf("%s", buffer);
             //clear out the buffer
             memset(buffer, 0, respStringLen);
         }
-        else if (strncmp(buffer, "start game", 10))
+        else if (strncmp(buffer, "start game", 10) == 0)
         {
-            printf("%s", buffer);
+            printf("starting game\n");
+            execl("./TicTacToe",(char*)NULL, (char *)NULL);
         }
         else
         {

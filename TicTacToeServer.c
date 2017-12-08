@@ -22,7 +22,11 @@ char* printMenu(){
 void requestData(char *msg, int sock, struct sockaddr_in clntAddress, unsigned int cliAddrLen, char *result)
 {
     int recvMsgSize;
-    check(sendto(sock, msg, strlen(msg), 0,
+    char data[MAX];
+    memset(data, 0, strlen(data));
+    strcpy(data, msg);
+    printf("sent msg `%s`\n", data);
+    check(sendto(sock, data, strlen(msg), 0,
                  (struct sockaddr *)&clntAddress, sizeof(clntAddress)) == strlen(msg),
           "sent different number of bytes than expected");
     printf("\nsent request to client\n");
@@ -39,7 +43,11 @@ error:
 //use when just sending 
 void sendData(char *msg, int sock, struct sockaddr_in clntAddress)
 {
-    check(sendto(sock, msg, strlen(msg), 0,
+    char data[MAX];
+    memset(data, 0, strlen(data));
+    strcpy(data, msg);
+    printf("sent msg: '%s' ", data);
+    check(sendto(sock, data, strlen(msg), 0,
                  (struct sockaddr *)&clntAddress, sizeof(clntAddress)) == strlen(msg),
           "sent different number of bytes than expected");
 
@@ -62,6 +70,7 @@ void handleRequest(int request, int sock, struct sockaddr_in clntAddress, unsign
         printf("\nrecieved %s of length %lu\n", data, strlen(data));
         memcpy(&loggedInUsers[loggedInCount], data, strlen(data));
         printf("added user %s", data);
+
         check(strcmp(loggedInUsers[loggedInCount], data) == 0, "copy did not work");
         loggedInCount += 1;
         printf("%i users logged in\n", loggedInCount);
@@ -71,28 +80,34 @@ void handleRequest(int request, int sock, struct sockaddr_in clntAddress, unsign
         printf("listing players\n");
         int i;
         char sendList[1000];
-        strcat(sendList ,"\nLogged in users:\n");
+        memset(sendList, 0, strlen(sendList));
+        strcat(sendList ,"Logged in users:\n");
         for(i = 0; i < loggedInCount; i++){
-            strcat(sendList, loggedInUsers[i]);
+            strcat(sendList, (", %s,",i, loggedInUsers[i]));
             printf("\t%i: %s\n", i, loggedInUsers[i]);
         }
-        strcat(sendList, "\n\0");
+        strcat(sendList, "\n");
         sendData(sendList, sock,clntAddress);
+        //clear out the list
+        memset(sendList, 0, strlen(sendList));
         break;
     case 3:
         printf("sending request\n");
-        requestData("enter username to request\n\0", sock, clntAddress, cliAddrLen, data);
+        memset(data, 0, strlen(data));
+        requestData("username to request?\n\0", sock, clntAddress, cliAddrLen, data);
+        printf("requesting %s for game\n", data);
         sendData("requesting\n\0",sock, clntAddress);
+        
         break;
     case 4:
         printf("accepting request\n");
         // fork();
         // execl("./TicTacToe", "", (char *)NULL);
-        sendData("start game\0", sock, clntAddress);
+        sendData("start game", sock, clntAddress);
         break;
     case 5:
         printf("quitting\n");
-        sendData("quit\0", sock, clntAddress);
+        sendData("quit", sock, clntAddress);
         return;
     }
     error:
@@ -152,6 +167,8 @@ int main(int argc, char *argv[])
         printf("Handling client %s\n", inet_ntoa(echoClntAddr.sin_addr));
         //get request number
         request = atoi(echoBuffer);
+        //empty the echoBuffer
+        memset(echoBuffer, 0, recvMsgSize);
         //handle the request
         handleRequest(request, sock, echoClntAddr, cliAddrLen);
         //send the menu to client after completing request
