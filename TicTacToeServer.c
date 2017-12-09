@@ -112,20 +112,31 @@ void handleRequest(int request, int sock, struct sockaddr_in clntAddress, unsign
         printf("sending request\n");
         clearMem(data);
         requestData("username to request?\n\0", sock, clntAddress, cliAddrLen, data);
-        printf("requesting %s for game\n", data);
-        sendData("requesting\n\0",sock, clntAddress);
-        
-        break;
-    case 4:
-        printf("accepting request\n");
-        // fork();
-        // execl("./TicTacToe", "", (char *)NULL);
-        sendData("start game", sock, clntAddress);
-        break;
-    case 5:
-        printf("quitting\n");
-        sendData("quit", sock, clntAddress);
-        return;
+        for(i = 0; i < loggedInCount; i++){
+            if (strncmp(data, loggedInUsers[i], strlen(loggedInUsers[i])) == 0)
+            {
+                printf("requesting %s for game\n", data);
+                goto found;
+            }
+        }
+        //if the loop exits without finding the user, it should go to not found
+        //otherwise, it wil jump over that to go to found
+        notfound:
+            sendData("no such user\n", sock, clntAddress);
+            break;
+        found:
+            sendData("requesting\n", sock, clntAddress);
+            break;
+        case 4:
+            printf("accepting request\n");
+            // fork();
+            // execl("./TicTacToe", "", (char *)NULL);
+            sendData("start game", sock, clntAddress);
+            break;
+        case 5:
+            printf("quitting\n");
+            sendData("quit", sock, clntAddress);
+            return;
     }
     error:
         return;
